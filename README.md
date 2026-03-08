@@ -42,8 +42,8 @@ http://127.0.0.1:4010/-/admin
 ## Run
 
 ```bash
-cd /home/joe/codex/active/autonomous-projects/projects/model-cluster-gateway
-python3 scripts/model_cluster_gateway.py --host 0.0.0.0 --port 4010
+cd model-cluster-gateway
+python3 scripts/model_cluster_gateway.py --config config/gateway_config.json --host 0.0.0.0 --port 4010
 ```
 
 Or with make helpers:
