@@ -2,6 +2,31 @@
 
 OpenAI-compatible single endpoint for a mixed cluster of local and hosted models.
 
+## Getting Started
+
+1. Install dependencies:
+```bash
+python3 -m pip install -r requirements.txt
+```
+2. Start the gateway:
+```bash
+./run_gateway.sh
+```
+3. Open the admin UI:
+```bash
+http://127.0.0.1:4010/-/admin
+```
+4. Default local admin credentials (when not set in env or `.env`):
+- user: `admin`
+- pass: `adminpass`
+
+MVP no-key behavior:
+- This shareable bundle includes `config/gateway_config.shareable.json` configured with Pollinations-first routing for zero-key startup.
+- You can switch to richer provider routing by setting API keys and using `config/gateway_config.json`.
+
+Release notes:
+- See [RELEASE_NOTES.md](RELEASE_NOTES.md).
+
 ## What it does
 
 - Exposes one external API: `/v1/chat/completions`
