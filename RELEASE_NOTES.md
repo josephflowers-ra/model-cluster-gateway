@@ -9,7 +9,6 @@ Highlights:
 - Built-in admin portal at `/-/admin` for provider setup and chat preview.
 - Pollinations-first shareable config (`config/gateway_config.shareable.json`) for no-key startup.
 - Team orchestration with stage tracing, verification levels, and cooldown-aware routing behavior.
-- Structured logs and export helpers for dogfooding and dataset generation.
 
 Operational defaults:
 - `run_gateway.sh` loads `.env` if present.

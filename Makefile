@@ -1,4 +1,4 @@
-.PHONY: run run-lan status discovery models reload smoke-chat smoke-team dogfood-workflow benchmark-models export-chat-dataset hardening-regression export-shareable
+.PHONY: run run-lan status discovery models reload smoke-chat smoke-team dogfood-workflow benchmark-models export-chat-dataset hardening-regression export-shareable sync-shareable
 
 HOST ?= 127.0.0.1
 PORT ?= 4010
@@ -65,3 +65,6 @@ export-shareable:
 	python3 scripts/export_shareable_bundle.py \
 		--mvp-pollinations-only \
 		--out-dir artifacts/share/model-cluster-gateway-shareable
+
+sync-shareable:
+	./scripts/sync_shareable_repo.sh

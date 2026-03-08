@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -89,6 +90,35 @@ def _write_shareable_notes(out_dir: Path, mvp_pollinations_only: bool) -> None:
     (out_dir / "SHAREABLE_NOTES.md").write_text("\n".join(notes), encoding="utf-8")
 
 
+def _write_release_notes(out_dir: Path) -> None:
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    notes = [
+        "# Release Notes",
+        "",
+        "## v0.1.0 - Shareable MVP",
+        "",
+        f"Date: {stamp}",
+        "",
+        "Highlights:",
+        "- OpenAI-compatible gateway with `/v1/chat/completions`, `/v1/team/chat/completions`, and `/v1/work`.",
+        "- Built-in admin portal at `/-/admin` for provider setup and chat preview.",
+        "- Pollinations-first shareable config (`config/gateway_config.shareable.json`) for no-key startup.",
+        "- Team orchestration with stage tracing, verification levels, and cooldown-aware routing behavior.",
+        "",
+        "Operational defaults:",
+        "- `run_gateway.sh` loads `.env` if present.",
+        "- If admin credentials are not set, local defaults are used:",
+        "  - `GATEWAY_ADMIN_USER=admin`",
+        "  - `GATEWAY_ADMIN_PASS=adminpass`",
+        "",
+        "Upgrade notes:",
+        "- For production, set explicit admin credentials in env and rotate them.",
+        "- Enable additional providers by configuring API keys and routing in `config/gateway_config.json`.",
+        "",
+    ]
+    (out_dir / "RELEASE_NOTES.md").write_text("\n".join(notes), encoding="utf-8")
+
+
 def _copy_project_tree(src_root: Path, out_dir: Path) -> None:
     if out_dir.exists():
         shutil.rmtree(out_dir)
@@ -145,6 +175,7 @@ def main() -> int:
     _dump_json(out_dir / "config" / "gateway_config.shareable.json", share_cfg)
 
     _write_shareable_notes(out_dir, bool(args.mvp_pollinations_only))
+    _write_release_notes(out_dir)
 
     summary = {
         "ok": True,

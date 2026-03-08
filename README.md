@@ -12,20 +12,13 @@ python3 -m pip install -r requirements.txt
 ```bash
 ./run_gateway.sh
 ```
-3. Open the admin UI:
+3. Open admin UI:
 ```bash
 http://127.0.0.1:4010/-/admin
 ```
-4. Default local admin credentials (when not set in env or `.env`):
+4. Default local admin credentials (if not set in env or `.env`):
 - user: `admin`
 - pass: `adminpass`
-
-MVP no-key behavior:
-- This shareable bundle includes `config/gateway_config.shareable.json` configured with Pollinations-first routing for zero-key startup.
-- You can switch to richer provider routing by setting API keys and using `config/gateway_config.json`.
-
-Release notes:
-- See [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
 ## What it does
 
@@ -73,6 +66,16 @@ Bundle output:
 - `artifacts/share/model-cluster-gateway-shareable/`
 - `config/gateway_config.shareable.json` (Pollinations-only route order for no-key startup)
 - `SHAREABLE_NOTES.md` (quick start + security notes)
+
+Publish/sync the shareable repo:
+
+```bash
+make sync-shareable
+```
+
+This project currently uses two repos:
+- Core development repo (internal): `codex-continuity-engine`
+- Public shareable repo: `model-cluster-gateway`
 
 Admin portal:
 
