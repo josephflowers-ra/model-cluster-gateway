@@ -1,0 +1,274 @@
+{
+  "gateway_model": "meta-cluster-1",
+  "local_registry": "../../config/local_model_registry.json",
+  "timeout_seconds": 90,
+  "heartbeat": {
+    "interval_seconds": 20,
+    "timeout_seconds": 4,
+    "prefer_healthy": true
+  },
+  "logging": {
+    "enabled": true,
+    "path": "artifacts/logs/gateway_events.jsonl",
+    "max_payload_chars": 0,
+    "capture_request_body": true,
+    "capture_response_body": true,
+    "include_model_transcripts": true,
+    "redact_secrets": false
+  },
+  "tools_autonomy": {
+    "max_tool_calls": 4
+  },
+  "cognitive_routing": {
+    "enabled": true,
+    "difficulty_thresholds": {
+      "plan_solve": 0.35,
+      "debate_verify": 0.62,
+      "search_reflect": 0.8
+    },
+    "budget_profiles": {
+      "fast_path": {
+        "team_size": 2,
+        "verification_level": "light",
+        "max_tool_calls": 2,
+        "step_timeout_seconds": 25
+      },
+      "plan_solve": {
+        "team_size": 3,
+        "verification_level": "standard",
+        "max_tool_calls": 2,
+        "step_timeout_seconds": 40
+      },
+      "debate_verify": {
+        "team_size": 4,
+        "verification_level": "strict",
+        "max_tool_calls": 3,
+        "step_timeout_seconds": 55
+      },
+      "search_reflect": {
+        "team_size": 4,
+        "verification_level": "strict",
+        "max_tool_calls": 4,
+        "step_timeout_seconds": 65
+      }
+    }
+  },
+  "admin_portal": {
+    "enabled": true,
+    "require_basic_auth": true,
+    "basic_auth_user_env": "GATEWAY_ADMIN_USER",
+    "basic_auth_pass_env": "GATEWAY_ADMIN_PASS"
+  },
+  "work_execution": {
+    "max_concurrency": 2,
+    "retry_count": 1,
+    "retry_backoff_seconds": 2,
+    "approval_ttl_seconds": 900,
+    "approval_hmac_secret_env": "GATEWAY_APPROVAL_HMAC_SECRET",
+    "privileged_actions": {
+      "enabled": false,
+      "required_actions": [
+        "shell",
+        "organize_apply",
+        "approve"
+      ],
+      "api_keys_env": "GATEWAY_WORK_API_KEYS",
+      "api_keys_file": ""
+    },
+    "run_timeout_seconds": 300,
+    "provider_retry": {
+      "groq": {
+        "retry_count": 2,
+        "retry_backoff_seconds": 2
+      },
+      "openrouter": {
+        "retry_count": 2,
+        "retry_backoff_seconds": 2
+      }
+    },
+    "circuit_breaker": {
+      "fail_threshold": 3,
+      "cooldown_seconds": 60
+    }
+  },
+  "team_orchestration": {
+    "enabled": true,
+    "default_team_size": 3,
+    "default_verification_level": "standard",
+    "step_timeout_seconds": 45,
+    "rate_limit_cooldown_seconds": 75,
+    "prefer_provider_diversity": true,
+    "stage_roles": {
+      "planner": "auto",
+      "solver": "auto",
+      "verifier": "auto",
+      "strict_checker": "auto",
+      "synthesizer": "auto"
+    },
+    "min_chars_for_team": 350,
+    "team_keywords": [
+      "verify",
+      "verification",
+      "double-check",
+      "compare options",
+      "tradeoff",
+      "architecture",
+      "production plan",
+      "safety check",
+      "proof",
+      "debug deeply"
+    ]
+  },
+  "pollinations": {
+    "base_url": "https://text.pollinations.ai",
+    "route_model": "openai-fast",
+    "model": "gpt-oss-20b",
+    "api_key_env": "POLLINATIONS_API_KEY"
+  },
+  "backends": {
+    "openai_primary": {
+      "kind": "openai",
+      "enabled": false,
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-5-chat-latest",
+      "api_key_env": "OPENAI_API_KEY"
+    },
+    "gemini_primary": {
+      "kind": "openai",
+      "enabled": false,
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "model": "gemini-2.5-flash",
+      "api_key_env": "GEMINI_API_KEY"
+    },
+    "groq_primary": {
+      "kind": "openai",
+      "provider": "groq",
+      "enabled": false,
+      "base_url": "https://api.groq.com/openai/v1",
+      "model": "moonshotai/kimi-k2-instruct-0905",
+      "api_key_env": "GROQ_API_KEY"
+    },
+    "mistral_primary": {
+      "kind": "openai",
+      "provider": "mistral",
+      "enabled": false,
+      "base_url": "https://api.mistral.ai/v1",
+      "model": "devstral-2512",
+      "api_key_env": "MISTRAL_API_KEY"
+    },
+    "cerebras_primary": {
+      "kind": "openai",
+      "provider": "cerebras",
+      "enabled": false,
+      "base_url": "https://api.cerebras.ai/v1",
+      "model": "gpt-oss-120b",
+      "api_key_env": "CEREBRAS_API_KEY"
+    },
+    "openrouter_primary": {
+      "kind": "openai",
+      "provider": "openrouter",
+      "enabled": false,
+      "base_url": "https://openrouter.ai/api/v1",
+      "model": "z-ai/glm-4.5-air:free",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "extra_headers": {
+        "HTTP-Referer": "https://local.codex.gateway",
+        "X-Title": "model-cluster-gateway"
+      }
+    },
+    "doubleword": {
+      "kind": "openai",
+      "provider": "openai",
+      "enabled": false,
+      "base_url": "https://api.doubleword.ai/v1",
+      "model": "openai/gpt-oss-20b"
+    }
+  },
+  "routing": {
+    "default_route": "balanced",
+    "routes": [
+      {
+        "name": "coding",
+        "keywords": [
+          "code",
+          "bug",
+          "debug",
+          "refactor",
+          "typescript",
+          "python",
+          "javascript",
+          "stack trace",
+          "compile",
+          "test"
+        ],
+        "order": [
+          {
+            "type": "pollinations"
+          }
+        ]
+      },
+      {
+        "name": "reasoning",
+        "keywords": [
+          "analyze",
+          "reason",
+          "compare",
+          "tradeoff",
+          "plan",
+          "architecture",
+          "why",
+          "decision"
+        ],
+        "order": [
+          {
+            "type": "pollinations"
+          }
+        ]
+      },
+      {
+        "name": "creative",
+        "keywords": [
+          "story",
+          "creative",
+          "character",
+          "lore",
+          "dialogue",
+          "brainstorm",
+          "theme"
+        ],
+        "order": [
+          {
+            "type": "pollinations"
+          }
+        ]
+      },
+      {
+        "name": "balanced",
+        "keywords": [],
+        "order": [
+          {
+            "type": "pollinations"
+          }
+        ]
+      },
+      {
+        "name": "hosted_api",
+        "keywords": [
+          "openai api",
+          "gemini api",
+          "groq api",
+          "mistral api",
+          "cerebras api",
+          "hosted model",
+          "cloud model",
+          "paid api"
+        ],
+        "order": [
+          {
+            "type": "pollinations"
+          }
+        ]
+      }
+    ]
+  }
+}

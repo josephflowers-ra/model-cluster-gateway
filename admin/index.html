@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model Cluster Gateway Admin</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --panel: #fff9f0;
+      --ink: #1f1f1f;
+      --accent: #0f6d5a;
+      --warn: #b03a2e;
+      --muted: #6a645d;
+      --line: #d7cdbf;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1400px 520px at 90% -10%, #d8f0e7 0%, transparent 55%),
+        radial-gradient(800px 340px at -10% 0%, #e9dfcf 0%, transparent 60%),
+        var(--bg);
+      color: var(--ink);
+      font: 14px/1.45 "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(4px);
+      position: sticky;
+      top: 0;
+      background: rgba(244, 239, 230, 0.92);
+      z-index: 3;
+    }
+    h1 { margin: 0; font: 700 19px/1.2 "IBM Plex Mono", "Menlo", monospace; letter-spacing: 0.01em; }
+    .sub { color: var(--muted); margin-top: 3px; }
+    main { padding: 18px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 8px 24px rgba(32, 31, 28, 0.06);
+    }
+    h2 { margin: 0 0 10px; font-size: 15px; }
+    .row { display: grid; gap: 8px; margin-bottom: 9px; }
+    .two { grid-template-columns: 1fr 1fr; }
+    .three { grid-template-columns: 1fr 1fr 1fr; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 3px; }
+    input, select, textarea, button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 9px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+    textarea { min-height: 92px; resize: vertical; font-family: "IBM Plex Mono", "Menlo", monospace; }
+    button {
+      width: auto;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    button.alt { background: #fff; color: var(--ink); border-color: var(--line); }
+    button.warn { background: var(--warn); border-color: var(--warn); }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 7px 6px; text-align: left; vertical-align: top; }
+    tr:hover td { background: #f4fbf8; }
+    .mono { font-family: "IBM Plex Mono", "Menlo", monospace; }
+    .status { margin-top: 8px; padding: 7px 9px; border-radius: 8px; background: #f3faf7; border: 1px solid #cde6dd; color: #144538; }
+    .status.err { background: #fff1ef; border-color: #f1c6c0; color: #7e261b; }
+    .small { font-size: 12px; color: var(--muted); }
+    .full { grid-column: 1 / -1; }
+    .runs { max-height: 210px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+    .pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 11px; border: 1px solid var(--line); }
+    .pill.ok { background: #edf9f3; border-color: #bfe3cf; color: #1b5f44; }
+    .pill.bad { background: #fff1ef; border-color: #f1c6c0; color: #7e261b; }
+    .layout-quick { order: 0; }
+    .layout-chat { order: 1; }
+    .layout-cognitive { order: 2; }
+    .layout-team { order: 3; }
+    .layout-provider { order: 4; }
+    .layout-local { order: 5; }
+    .layout-runs { order: 6; }
+    .layout-logs { order: 7; }
+    .flow { margin: 0; padding-left: 16px; }
+    @media (max-width: 1060px) {
+      main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Model Cluster Gateway Admin</h1>
+    <div class="sub" id="meta">Loading...</div>
+  </header>
+  <main>
+    <section class="card full layout-quick">
+      <h2>Quick Ops</h2>
+      <div class="small">Recommended daily flow:</div>
+      <ol class="flow small">
+        <li>Chat Preview (prompt + route/verification checks)</li>
+        <li>Cognitive Routing (difficulty thresholds + mode budgets)</li>
+        <li>Team Stage Roles (if you need controlled stage assignment)</li>
+        <li>Provider + Local Model Setup (configuration changes)</li>
+        <li>Run Monitor (active workflow runs)</li>
+        <li>Log Explorer (debugging and dataset export)</li>
+      </ol>
+      <div class="btns">
+        <button class="alt" id="quick_refresh_snapshot">Refresh Snapshot</button>
+        <button class="alt" id="quick_refresh_runs">Refresh Runs</button>
+        <button class="alt" id="quick_refresh_logs">Refresh Logs</button>
+        <button class="alt" id="quick_reload_gateway">Reload Gateway</button>
+      </div>
+      <div id="quick_status" class="status small">Ready.</div>
+    </section>
+
+    <section class="card layout-cognitive">
+      <h2>Cognitive Routing</h2>
+      <div class="small">Controls adaptive mode selection and mode-specific budgets.</div>
+      <div class="row three" style="margin-top:8px">
+        <div><label>Enabled</label><select id="cg_enabled"><option value="true">true</option><option value="false">false</option></select></div>
+        <div><label>Threshold: plan_solve</label><input id="cg_th_plan" value="0.35"></div>
+        <div><label>Threshold: debate_verify</label><input id="cg_th_debate" value="0.62"></div>
+      </div>
+      <div class="row three">
+        <div><label>Threshold: search_reflect</label><input id="cg_th_search" value="0.80"></div>
+        <div></div>
+        <div></div>
+      </div>
+      <div class="small" style="margin:4px 0 8px">Per-mode budget profiles</div>
+      <div class="runs" style="margin-top:4px">
+        <table>
+          <thead><tr><th>Mode</th><th>Team Size</th><th>Verification</th><th>Max Tool Calls</th><th>Step Timeout (s)</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="mono">fast_path</td>
+              <td><input id="cg_fast_team_size" value="2"></td>
+              <td><select id="cg_fast_verification"><option>light</option><option>standard</option><option>strict</option></select></td>
+              <td><input id="cg_fast_max_tools" value="2"></td>
+              <td><input id="cg_fast_step_timeout" value="25"></td>
+            </tr>
+            <tr>
+              <td class="mono">plan_solve</td>
+              <td><input id="cg_plan_team_size" value="3"></td>
+              <td><select id="cg_plan_verification"><option>light</option><option selected>standard</option><option>strict</option></select></td>
+              <td><input id="cg_plan_max_tools" value="2"></td>
+              <td><input id="cg_plan_step_timeout" value="40"></td>
+            </tr>
+            <tr>
+              <td class="mono">debate_verify</td>
+              <td><input id="cg_debate_team_size" value="4"></td>
+              <td><select id="cg_debate_verification"><option>light</option><option>standard</option><option selected>strict</option></select></td>
+              <td><input id="cg_debate_max_tools" value="3"></td>
+              <td><input id="cg_debate_step_timeout" value="55"></td>
+            </tr>
+            <tr>
+              <td class="mono">search_reflect</td>
+              <td><input id="cg_search_team_size" value="4"></td>
+              <td><select id="cg_search_verification"><option>light</option><option>standard</option><option selected>strict</option></select></td>
+              <td><input id="cg_search_max_tools" value="4"></td>
+              <td><input id="cg_search_step_timeout" value="65"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="btns" style="margin-top:10px">
+        <button id="save_cognitive_routing">Save Cognitive Routing</button>
+        <button class="alt" id="reset_cognitive_routing">Reset Defaults</button>
+      </div>
+      <div id="cognitive_status" class="status small">No actions yet.</div>
+    </section>
+
+    <section class="card layout-provider">
+      <h2>Provider Setup</h2>
+      <div class="row three">
+        <div><label>Backend Name</label><input id="p_name" placeholder="gemini_primary"></div>
+        <div><label>Provider Family</label><input id="p_provider" list="provider_family_opts" placeholder="openai|gemini|groq|..."></div>
+        <div><label>Kind</label><input id="p_kind" value="openai"></div>
+      </div>
+      <datalist id="provider_family_opts">
+        <option value="openai"></option><option value="gemini"></option><option value="groq"></option>
+        <option value="mistral"></option><option value="cerebras"></option><option value="openrouter"></option>
+        <option value="pollinations"></option>
+      </datalist>
+      <div class="row two">
+        <div><label>Base URL</label><input id="p_base_url" placeholder="https://.../v1"></div>
+        <div><label>Model</label><input id="p_model" placeholder="gemini-2.5-flash"></div>
+      </div>
+      <div class="row two">
+        <div><label>API Key Env</label><input id="p_api_key_env" placeholder="GEMINI_API_KEY"></div>
+        <div><label>API Key File</label><input id="p_api_key_file" placeholder="config/secrets/gemini_primary.key"></div>
+      </div>
+      <div class="row two">
+        <div><label>Route Names (comma list)</label><input id="p_route_names" placeholder="coding,reasoning,balanced"></div>
+        <div><label>Optional Key Value (writes file)</label><input id="p_api_key_value" type="password" placeholder="Paste key only when updating"></div>
+      </div>
+      <div class="row two">
+        <div><label>Enabled</label><select id="p_enabled"><option value="true">true</option><option value="false">false</option></select></div>
+        <div></div>
+      </div>
+      <div class="row">
+        <div><label>Extra Headers JSON</label><textarea id="p_extra_headers">{}</textarea></div>
+      </div>
+      <div class="btns">
+        <button class="alt" id="new_provider">New Provider</button>
+        <button id="save_provider">Save Provider</button>
+        <button class="alt" id="enable_provider">Enable Provider</button>
+        <button class="alt" id="disable_provider">Disable Provider</button>
+        <button class="alt" id="test_provider">Test Provider</button>
+        <button class="warn" id="delete_provider">Delete Provider</button>
+        <button class="alt" id="reload_gateway">Reload Gateway</button>
+      </div>
+      <div id="provider_status" class="status small">No actions yet.</div>
+      <div style="margin-top:12px" class="small">Click a row below to load it into the form.</div>
+      <div class="runs" style="margin-top:6px">
+        <table>
+          <thead><tr><th>Name</th><th>Provider</th><th>Model</th><th>Routes</th></tr></thead>
+          <tbody id="provider_rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card layout-team">
+      <h2>Team Stage Roles</h2>
+      <div class="small">Use <span class="mono">auto</span>, <span class="mono">provider:&lt;family&gt;</span>, <span class="mono">backend:&lt;name&gt;</span>, or <span class="mono">local_role:&lt;role&gt;</span>.</div>
+      <div class="row two" style="margin-top:8px">
+        <div><label>Planner</label><input id="ts_planner" placeholder="auto"></div>
+        <div><label>Solver</label><input id="ts_solver" placeholder="auto"></div>
+      </div>
+      <div class="row two">
+        <div><label>Verifier</label><input id="ts_verifier" placeholder="auto"></div>
+        <div><label>Strict Checker</label><input id="ts_strict_checker" placeholder="auto"></div>
+      </div>
+      <div class="row">
+        <div><label>Synthesizer</label><input id="ts_synthesizer" placeholder="auto"></div>
+      </div>
+      <div class="btns">
+        <button id="save_stage_roles">Save Stage Roles</button>
+        <button class="alt" id="reset_stage_roles">Reset To Auto</button>
+      </div>
+      <div id="stage_roles_status" class="status small">No actions yet.</div>
+    </section>
+
+    <section class="card layout-chat">
+      <h2>Chat Preview</h2>
+      <div class="row two">
+        <div><label>Provider Pin (optional)</label>
+          <select id="chat_provider">
+            <option value="">auto (no pin)</option>
+          </select>
+          <div class="small">Supports provider families, <span class="mono">local</span>, and explicit <span class="mono">backend:&lt;name&gt;</span>.</div>
+        </div>
+        <div><label>Team Mode</label>
+          <select id="chat_team_mode"><option value="off">off</option><option value="on">on</option></select>
+        </div>
+      </div>
+      <div class="row two">
+        <div><label>Router Hint</label><input id="chat_router_hint" value="reasoning"></div>
+        <div><label>Verification</label>
+          <select id="chat_verification"><option>light</option><option selected>standard</option><option>strict</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Prompt</label><textarea id="chat_prompt">Give 3 practical steps to improve gateway reliability and explain why.</textarea></div>
+      </div>
+      <div class="btns"><button id="run_chat">Run Chat Preview</button></div>
+      <div id="chat_status" class="status small">Waiting.</div>
+      <div class="row" style="margin-top:8px">
+        <div><label>Assistant Output</label><textarea id="chat_output" readonly></textarea></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div><label>Team Trace (members + steps)</label><textarea id="chat_team_trace" readonly></textarea></div>
+      </div>
+    </section>
+
+    <section class="card full layout-local">
+      <h2>Local Models (LM Studio)</h2>
+      <div class="row three">
+        <div><label>Node Base URL</label><input id="lm_base_url" placeholder="http://10.0.0.11:1234/v1"></div>
+        <div><label>Model ID</label><input id="lm_id" placeholder="qwen/qwen3-coder-next"></div>
+        <div><label>Routing Role</label><input id="lm_role" placeholder="heavy_coding"></div>
+      </div>
+      <div class="row two">
+        <div><label>Size GB (optional)</label><input id="lm_size_gb" placeholder="48.5"></div>
+        <div><label>Parallel (optional)</label><input id="lm_parallel" placeholder="4"></div>
+      </div>
+      <div class="row two">
+        <div><label>Enabled</label><select id="lm_enabled"><option value="true">true</option><option value="false">false</option></select></div>
+        <div></div>
+      </div>
+      <div class="btns">
+        <button class="alt" id="new_local_model">New Local Mapping</button>
+        <button id="save_local_model">Save Local Mapping</button>
+        <button class="alt" id="enable_local_model">Enable</button>
+        <button class="alt" id="disable_local_model">Disable</button>
+        <button class="warn" id="delete_local_model">Delete Mapping</button>
+      </div>
+      <div id="local_model_status" class="status small">No actions yet.</div>
+      <div style="margin-top:12px" class="small">Click a row below to load it into the form.</div>
+      <div class="runs" style="margin-top:6px">
+        <table>
+          <thead><tr><th>Node</th><th>Model</th><th>Role</th><th>Enabled</th><th>Loaded</th></tr></thead>
+          <tbody id="local_model_rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card full layout-runs">
+      <h2>Run Monitor</h2>
+      <div class="btns">
+        <button class="alt" id="refresh_runs">Refresh Runs</button>
+      </div>
+      <div class="row two" style="margin-top:8px">
+        <div>
+          <label>Runs</label>
+          <div class="runs">
+            <table>
+              <thead><tr><th>Run ID</th><th>Status</th><th>Mode</th><th>Project</th></tr></thead>
+              <tbody id="run_rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <label>Events</label>
+          <textarea id="run_events" readonly></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="card full layout-logs">
+      <h2>Log Explorer</h2>
+      <div class="row three">
+        <div><label>Limit</label><input id="log_limit" value="200"></div>
+        <div><label>Event Type</label><input id="log_event_type" placeholder="tool_request"></div>
+        <div><label>Level</label><input id="log_level" placeholder="info|warn|error"></div>
+      </div>
+      <div class="row two">
+        <div><label>Export Format</label>
+          <select id="log_export_format">
+            <option value="jsonl">jsonl</option>
+            <option value="json">json</option>
+            <option value="csv">csv</option>
+          </select>
+        </div>
+        <div></div>
+      </div>
+      <div class="row two">
+        <div><label>Request ID</label><input id="log_request_id" placeholder="req_xxx"></div>
+        <div><label>Run ID</label><input id="log_run_id" placeholder="run_xxx"></div>
+      </div>
+      <div class="btns">
+        <button class="alt" id="refresh_logs">Refresh Logs</button>
+        <button class="alt" id="export_logs">Export Logs</button>
+        <button class="alt" id="clear_log_filters">Clear Filters</button>
+      </div>
+      <div id="log_status" class="status small">Waiting.</div>
+      <div class="row" style="margin-top:8px">
+        <div><label>JSONL View</label><textarea id="logs_output" readonly></textarea></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const S = {
+      providers: [],
+      localModels: [],
+      cognitiveRouting: {},
+      runs: [],
+      selectedRunId: "",
+      pollTimer: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const jsonFetch = async (url, method = "GET", body = null) => {
+      const opts = { method, headers: { "content-type": "application/json" } };
+      if (body) opts.body = JSON.stringify(body);
+      const r = await fetch(url, opts);
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.error?.message || ("HTTP " + r.status));
+      return data;
+    };
+
+    const setStatus = (id, text, err = false) => {
+      const node = $(id);
+      node.textContent = text;
+      node.className = "status small" + (err ? " err" : "");
+    };
+
+    const fillProviderForm = (p) => {
+      $("p_name").value = p.name || "";
+      $("p_provider").value = p.provider || "openai";
+      $("p_kind").value = p.kind || "openai";
+      $("p_enabled").value = String(Boolean(p.enabled));
+      $("p_base_url").value = p.base_url || "";
+      $("p_model").value = p.model || "";
+      $("p_api_key_env").value = p.api_key_env || "";
+      $("p_api_key_file").value = p.api_key_file || "";
+      $("p_api_key_value").value = "";
+      $("p_route_names").value = (p.route_names || []).join(",");
+      $("p_extra_headers").value = JSON.stringify(p.extra_headers || {}, null, 2);
+    };
+
+    const clearProviderForm = () => {
+      $("p_name").value = "";
+      $("p_provider").value = "openai";
+      $("p_kind").value = "openai";
+      $("p_enabled").value = "true";
+      $("p_base_url").value = "";
+      $("p_model").value = "";
+      $("p_api_key_env").value = "";
+      $("p_api_key_file").value = "";
+      $("p_api_key_value").value = "";
+      $("p_route_names").value = "";
+      $("p_extra_headers").value = "{}";
+    };
+
+    const renderProviders = () => {
+      const rows = S.providers.map((p) => {
+        const tr = document.createElement("tr");
+        const h = p.health || {};
+        const healthyText = h.last_success_epoch
+          ? new Date(h.last_success_epoch * 1000).toLocaleTimeString()
+          : "never";
+        const circuit = h.circuit_open
+          ? ("open until " + new Date((h.open_until_epoch || 0) * 1000).toLocaleTimeString())
+          : "closed";
+        tr.innerHTML = "<td class='mono'>" + p.name + "</td><td>" + p.provider + (p.enabled ? " <span class='pill ok'>enabled</span>" : " <span class='pill bad'>disabled</span>") + "</td><td class='mono'>" + p.model + "</td><td>" + (p.route_names || []).join(", ") + "</td>";
+        tr.title = "last_success=" + healthyText + " | circuit=" + circuit + " | failures=" + String(h.failures || 0);
+        tr.addEventListener("click", () => fillProviderForm(p));
+        return tr;
+      });
+      const body = $("provider_rows");
+      body.innerHTML = "";
+      rows.forEach((r) => body.appendChild(r));
+    };
+
+    const fillLocalModelForm = (m) => {
+      $("lm_base_url").value = m.base_url || "";
+      $("lm_id").value = m.id || "";
+      $("lm_role").value = m.role || "";
+      $("lm_size_gb").value = m.size_gb != null ? String(m.size_gb) : "";
+      $("lm_parallel").value = m.parallel != null ? String(m.parallel) : "";
+      $("lm_enabled").value = String(Boolean(m.enabled));
+    };
+
+    const clearLocalModelForm = () => {
+      $("lm_base_url").value = "";
+      $("lm_id").value = "";
+      $("lm_role").value = "";
+      $("lm_size_gb").value = "";
+      $("lm_parallel").value = "";
+      $("lm_enabled").value = "true";
+    };
+
+    const fillCognitiveRoutingForm = (cfg) => {
+      const c = cfg || {};
+      const th = c.difficulty_thresholds || {};
+      const bp = c.budget_profiles || {};
+      const profile = (name, fallback) => Object.assign({}, fallback, bp[name] || {});
+      const fast = profile("fast_path", { team_size: 2, verification_level: "light", max_tool_calls: 2, step_timeout_seconds: 25 });
+      const plan = profile("plan_solve", { team_size: 3, verification_level: "standard", max_tool_calls: 2, step_timeout_seconds: 40 });
+      const debate = profile("debate_verify", { team_size: 4, verification_level: "strict", max_tool_calls: 3, step_timeout_seconds: 55 });
+      const search = profile("search_reflect", { team_size: 4, verification_level: "strict", max_tool_calls: 4, step_timeout_seconds: 65 });
+
+      $("cg_enabled").value = String(Boolean(c.enabled !== false));
+      $("cg_th_plan").value = String(th.plan_solve ?? 0.35);
+      $("cg_th_debate").value = String(th.debate_verify ?? 0.62);
+      $("cg_th_search").value = String(th.search_reflect ?? 0.80);
+
+      $("cg_fast_team_size").value = String(fast.team_size);
+      $("cg_fast_verification").value = String(fast.verification_level);
+      $("cg_fast_max_tools").value = String(fast.max_tool_calls);
+      $("cg_fast_step_timeout").value = String(fast.step_timeout_seconds);
+
+      $("cg_plan_team_size").value = String(plan.team_size);
+      $("cg_plan_verification").value = String(plan.verification_level);
+      $("cg_plan_max_tools").value = String(plan.max_tool_calls);
+      $("cg_plan_step_timeout").value = String(plan.step_timeout_seconds);
+
+      $("cg_debate_team_size").value = String(debate.team_size);
+      $("cg_debate_verification").value = String(debate.verification_level);
+      $("cg_debate_max_tools").value = String(debate.max_tool_calls);
+      $("cg_debate_step_timeout").value = String(debate.step_timeout_seconds);
+
+      $("cg_search_team_size").value = String(search.team_size);
+      $("cg_search_verification").value = String(search.verification_level);
+      $("cg_search_max_tools").value = String(search.max_tool_calls);
+      $("cg_search_step_timeout").value = String(search.step_timeout_seconds);
+    };
+
+    const collectCognitiveRoutingPayload = () => {
+      const num = (id, fallback) => {
+        const v = Number($(id).value);
+        return Number.isFinite(v) ? v : fallback;
+      };
+      return {
+        cognitive_routing: {
+          enabled: $("cg_enabled").value === "true",
+          difficulty_thresholds: {
+            plan_solve: num("cg_th_plan", 0.35),
+            debate_verify: num("cg_th_debate", 0.62),
+            search_reflect: num("cg_th_search", 0.8)
+          },
+          budget_profiles: {
+            fast_path: {
+              team_size: num("cg_fast_team_size", 2),
+              verification_level: $("cg_fast_verification").value,
+              max_tool_calls: num("cg_fast_max_tools", 2),
+              step_timeout_seconds: num("cg_fast_step_timeout", 25)
+            },
+            plan_solve: {
+              team_size: num("cg_plan_team_size", 3),
+              verification_level: $("cg_plan_verification").value,
+              max_tool_calls: num("cg_plan_max_tools", 2),
+              step_timeout_seconds: num("cg_plan_step_timeout", 40)
+            },
+            debate_verify: {
+              team_size: num("cg_debate_team_size", 4),
+              verification_level: $("cg_debate_verification").value,
+              max_tool_calls: num("cg_debate_max_tools", 3),
+              step_timeout_seconds: num("cg_debate_step_timeout", 55)
+            },
+            search_reflect: {
+              team_size: num("cg_search_team_size", 4),
+              verification_level: $("cg_search_verification").value,
+              max_tool_calls: num("cg_search_max_tools", 4),
+              step_timeout_seconds: num("cg_search_step_timeout", 65)
+            }
+          }
+        }
+      };
+    };
+
+    const renderLocalModels = () => {
+      const body = $("local_model_rows");
+      body.innerHTML = "";
+      for (const m of S.localModels) {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td class='mono'>" + String(m.base_url || "") + "</td>" +
+          "<td class='mono'>" + String(m.id || "") + "</td>" +
+          "<td>" + String(m.role || "") + "</td>" +
+          "<td>" + (m.enabled ? "<span class='pill ok'>enabled</span>" : "<span class='pill bad'>disabled</span>") + "</td>" +
+          "<td>" + (m.loaded ? "<span class='pill ok'>loaded</span>" : "<span class='pill bad'>not loaded</span>") + "</td>";
+        tr.style.cursor = "pointer";
+        tr.addEventListener("click", () => fillLocalModelForm(m));
+        body.appendChild(tr);
+      }
+    };
+
+    const renderRuns = () => {
+      const body = $("run_rows");
+      body.innerHTML = "";
+      for (const run of S.runs) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td class='mono'>" + run.id + "</td><td>" + run.status + "</td><td>" + (run.mode || "") + "</td><td class='mono'>" + (run.project_id || "") + "</td>";
+        tr.style.cursor = "pointer";
+        tr.addEventListener("click", () => selectRun(run.id));
+        body.appendChild(tr);
+      }
+    };
+
+    const renderProviderPinOptions = () => {
+      const sel = $("chat_provider");
+      const current = sel.value;
+      const providerRows = Array.isArray(S.providers) ? S.providers.slice() : [];
+      const knownFamilies = ["openai", "gemini", "groq", "mistral", "cerebras", "openrouter", "pollinations"];
+      const families = Array.from(
+        new Set(
+          knownFamilies.concat(
+            providerRows.map((p) => String(p.provider || "").trim()).filter(Boolean)
+          )
+        )
+      ).sort();
+      sel.innerHTML = "<option value=''>auto (no pin)</option>";
+      const localOpt = document.createElement("option");
+      localOpt.value = "local";
+      localOpt.textContent = "local (LM Studio only)";
+      sel.appendChild(localOpt);
+      for (const p of providerRows) {
+        const backendName = String(p.name || "").trim();
+        if (!backendName) continue;
+        const opt = document.createElement("option");
+        opt.value = "backend:" + backendName;
+        opt.textContent = backendName + ": " + String(p.model || "");
+        sel.appendChild(opt);
+      }
+      for (const fam of families) {
+        const opt = document.createElement("option");
+        opt.value = fam;
+        opt.textContent = "provider family: " + fam;
+        sel.appendChild(opt);
+      }
+      const backendPins = providerRows
+        .map((p) => "backend:" + String(p.name || "").trim())
+        .filter((x) => x !== "backend:");
+      if (["local"].includes(current) || families.includes(current) || backendPins.includes(current)) {
+        sel.value = current;
+      }
+    };
+
+    const renderProviderFamilyOptions = () => {
+      const families = Array.from(
+        new Set((S.providers || []).map((p) => String(p.provider || "").trim()).filter(Boolean))
+      ).sort();
+      const defaults = ["openai", "gemini", "groq", "mistral", "cerebras", "openrouter", "pollinations"];
+      const all = Array.from(new Set(defaults.concat(families)));
+      const dl = $("provider_family_opts");
+      dl.innerHTML = "";
+      for (const fam of all) {
+        const opt = document.createElement("option");
+        opt.value = fam;
+        dl.appendChild(opt);
+      }
+    };
+
+    const selectRun = async (runId) => {
+      S.selectedRunId = runId;
+      await loadRunEvents();
+      if (S.pollTimer) clearInterval(S.pollTimer);
+      S.pollTimer = setInterval(loadRunEvents, 2000);
+    };
+
+    const loadRunEvents = async () => {
+      if (!S.selectedRunId) return;
+      try {
+        const data = await jsonFetch("/v1/work/" + S.selectedRunId + "/events");
+        const lines = (data.events || []).map((e) => "[" + new Date((e.ts || 0) * 1000).toLocaleTimeString() + "] " + e.type + " " + JSON.stringify(e.payload || {}));
+        $("run_events").value = lines.join("\n");
+      } catch (err) {
+        $("run_events").value = "Failed loading events: " + err.message;
+      }
+    };
+
+    const loadBootstrap = async () => {
+      const boot = await jsonFetch("/-/admin/api/bootstrap");
+      S.providers = boot.providers || [];
+      S.localModels = boot.local_models || [];
+      S.cognitiveRouting = (boot.config && boot.config.cognitive_routing) ? boot.config.cognitive_routing : {};
+      S.runs = boot.runs || [];
+      const stageRoles = boot.team_stage_roles || {};
+      $("ts_planner").value = stageRoles.planner || "auto";
+      $("ts_solver").value = stageRoles.solver || "auto";
+      $("ts_verifier").value = stageRoles.verifier || "auto";
+      $("ts_strict_checker").value = stageRoles.strict_checker || "auto";
+      $("ts_synthesizer").value = stageRoles.synthesizer || "auto";
+      fillCognitiveRoutingForm(S.cognitiveRouting);
+      renderProviders();
+      renderLocalModels();
+      renderProviderPinOptions();
+      renderProviderFamilyOptions();
+      renderRuns();
+      const sum = boot.status?.summary || {};
+      $("meta").textContent =
+        "Gateway: " + (boot.gateway_model || "") +
+        " | healthy " + (sum.healthy || 0) + "/" + (sum.total || 0) +
+        " | config: " + (boot.config_path || "") +
+        " | local registry: " + (boot.local_registry_path || "") +
+        " | logs: " + ((boot.logging && boot.logging.path) ? boot.logging.path : "(disabled)");
+    };
+
+    const loadLogs = async () => {
+      const limit = Number($("log_limit").value || "200");
+      const eventType = $("log_event_type").value.trim();
+      const level = $("log_level").value.trim();
+      const requestId = $("log_request_id").value.trim();
+      const runId = $("log_run_id").value.trim();
+      const q = new URLSearchParams();
+      if (Number.isFinite(limit) && limit > 0) q.set("limit", String(limit));
+      if (eventType) q.set("event_type", eventType);
+      if (level) q.set("level", level);
+      if (requestId) q.set("request_id", requestId);
+      if (runId) q.set("run_id", runId);
+      const out = await jsonFetch("/-/admin/api/logs?" + q.toString());
+      const events = out.events || [];
+      $("logs_output").value = events.map((e) => JSON.stringify(e)).join("\n");
+      setStatus("log_status", "Loaded " + String(events.length) + " log events.");
+    };
+
+    const logQueryParams = () => {
+      const limit = Number($("log_limit").value || "200");
+      const eventType = $("log_event_type").value.trim();
+      const level = $("log_level").value.trim();
+      const requestId = $("log_request_id").value.trim();
+      const runId = $("log_run_id").value.trim();
+      const q = new URLSearchParams();
+      if (Number.isFinite(limit) && limit > 0) q.set("limit", String(limit));
+      if (eventType) q.set("event_type", eventType);
+      if (level) q.set("level", level);
+      if (requestId) q.set("request_id", requestId);
+      if (runId) q.set("run_id", runId);
+      return q;
+    };
+
+    const parseHeaders = () => {
+      const raw = $("p_extra_headers").value.trim();
+      if (!raw) return {};
+      return JSON.parse(raw);
+    };
+
+    $("save_provider").addEventListener("click", async () => {
+      try {
+        const payload = {
+          name: $("p_name").value.trim(),
+          provider: $("p_provider").value.trim(),
+          kind: $("p_kind").value.trim(),
+          base_url: $("p_base_url").value.trim(),
+          model: $("p_model").value.trim(),
+          api_key_env: $("p_api_key_env").value.trim(),
+          api_key_file: $("p_api_key_file").value.trim(),
+          api_key_value: $("p_api_key_value").value.trim(),
+          enabled: $("p_enabled").value === "true",
+          route_names: $("p_route_names").value.split(",").map((x) => x.trim()).filter(Boolean),
+          extra_headers: parseHeaders()
+        };
+        await jsonFetch("/-/admin/api/provider/upsert", "POST", payload);
+        await loadBootstrap();
+        setStatus("provider_status", "Provider saved.");
+      } catch (err) {
+        setStatus("provider_status", "Save failed: " + err.message, true);
+      }
+    });
+
+    $("new_provider").addEventListener("click", () => {
+      clearProviderForm();
+      setStatus("provider_status", "New provider form ready. Fill fields and click Save Provider.");
+    });
+
+    $("test_provider").addEventListener("click", async () => {
+      try {
+        const name = $("p_name").value.trim();
+        if (!name) throw new Error("Select or enter provider name first");
+        const out = await jsonFetch("/-/admin/api/provider/test", "POST", { name });
+        setStatus("provider_status", "Test ok (" + out.elapsed_ms + "ms): " + (out.preview || ""));
+      } catch (err) {
+        setStatus("provider_status", "Test failed: " + err.message, true);
+      }
+    });
+
+    const setProviderEnabled = async (enabled) => {
+      const name = $("p_name").value.trim();
+      if (!name) throw new Error("Select or enter provider name first");
+      await jsonFetch("/-/admin/api/provider/set-enabled", "POST", { name, enabled: Boolean(enabled) });
+      await loadBootstrap();
+      $("p_enabled").value = String(Boolean(enabled));
+    };
+
+    $("enable_provider").addEventListener("click", async () => {
+      try {
+        await setProviderEnabled(true);
+        setStatus("provider_status", "Provider enabled.");
+      } catch (err) {
+        setStatus("provider_status", "Enable failed: " + err.message, true);
+      }
+    });
+
+    $("disable_provider").addEventListener("click", async () => {
+      try {
+        await setProviderEnabled(false);
+        setStatus("provider_status", "Provider disabled.");
+      } catch (err) {
+        setStatus("provider_status", "Disable failed: " + err.message, true);
+      }
+    });
+
+    $("delete_provider").addEventListener("click", async () => {
+      try {
+        const name = $("p_name").value.trim();
+        if (!name) throw new Error("Select or enter provider name first");
+        await jsonFetch("/-/admin/api/provider/delete", "POST", { name });
+        await loadBootstrap();
+        setStatus("provider_status", "Provider deleted.");
+      } catch (err) {
+        setStatus("provider_status", "Delete failed: " + err.message, true);
+      }
+    });
+
+    $("reload_gateway").addEventListener("click", async () => {
+      try {
+        await jsonFetch("/-/admin/api/reload", "POST", {});
+        await loadBootstrap();
+        setStatus("provider_status", "Gateway reloaded.");
+      } catch (err) {
+        setStatus("provider_status", "Reload failed: " + err.message, true);
+      }
+    });
+
+    $("save_stage_roles").addEventListener("click", async () => {
+      try {
+        const payload = {
+          stage_roles: {
+            planner: $("ts_planner").value.trim() || "auto",
+            solver: $("ts_solver").value.trim() || "auto",
+            verifier: $("ts_verifier").value.trim() || "auto",
+            strict_checker: $("ts_strict_checker").value.trim() || "auto",
+            synthesizer: $("ts_synthesizer").value.trim() || "auto"
+          }
+        };
+        await jsonFetch("/-/admin/api/team/stage-roles", "POST", payload);
+        await loadBootstrap();
+        setStatus("stage_roles_status", "Stage roles updated.");
+      } catch (err) {
+        setStatus("stage_roles_status", "Update failed: " + err.message, true);
+      }
+    });
+
+    $("reset_stage_roles").addEventListener("click", async () => {
+      try {
+        await jsonFetch("/-/admin/api/team/stage-roles", "POST", {
+          stage_roles: {
+            planner: "auto",
+            solver: "auto",
+            verifier: "auto",
+            strict_checker: "auto",
+            synthesizer: "auto"
+          }
+        });
+        await loadBootstrap();
+        setStatus("stage_roles_status", "Stage roles reset to auto.");
+      } catch (err) {
+        setStatus("stage_roles_status", "Reset failed: " + err.message, true);
+      }
+    });
+
+    $("save_cognitive_routing").addEventListener("click", async () => {
+      try {
+        const payload = collectCognitiveRoutingPayload();
+        await jsonFetch("/-/admin/api/cognitive-routing", "POST", payload);
+        await loadBootstrap();
+        setStatus("cognitive_status", "Cognitive routing updated.");
+      } catch (err) {
+        setStatus("cognitive_status", "Update failed: " + err.message, true);
+      }
+    });
+
+    $("reset_cognitive_routing").addEventListener("click", async () => {
+      try {
+        const defaults = {
+          enabled: true,
+          difficulty_thresholds: { plan_solve: 0.35, debate_verify: 0.62, search_reflect: 0.8 },
+          budget_profiles: {
+            fast_path: { team_size: 2, verification_level: "light", max_tool_calls: 2, step_timeout_seconds: 25 },
+            plan_solve: { team_size: 3, verification_level: "standard", max_tool_calls: 2, step_timeout_seconds: 40 },
+            debate_verify: { team_size: 4, verification_level: "strict", max_tool_calls: 3, step_timeout_seconds: 55 },
+            search_reflect: { team_size: 4, verification_level: "strict", max_tool_calls: 4, step_timeout_seconds: 65 }
+          }
+        };
+        await jsonFetch("/-/admin/api/cognitive-routing", "POST", { cognitive_routing: defaults });
+        await loadBootstrap();
+        setStatus("cognitive_status", "Cognitive routing reset to defaults.");
+      } catch (err) {
+        setStatus("cognitive_status", "Reset failed: " + err.message, true);
+      }
+    });
+
+    $("save_local_model").addEventListener("click", async () => {
+      try {
+        const payload = {
+          base_url: $("lm_base_url").value.trim(),
+          id: $("lm_id").value.trim(),
+          role: $("lm_role").value.trim(),
+          size_gb: $("lm_size_gb").value.trim(),
+          parallel: $("lm_parallel").value.trim(),
+          enabled: $("lm_enabled").value === "true"
+        };
+        await jsonFetch("/-/admin/api/local-model/upsert", "POST", payload);
+        await loadBootstrap();
+        setStatus("local_model_status", "Local model mapping saved.");
+      } catch (err) {
+        setStatus("local_model_status", "Save failed: " + err.message, true);
+      }
+    });
+
+    $("new_local_model").addEventListener("click", () => {
+      clearLocalModelForm();
+      setStatus("local_model_status", "New local mapping form ready. Fill fields and click Save Local Mapping.");
+    });
+
+    const setLocalEnabled = async (enabled) => {
+      const payload = {
+        base_url: $("lm_base_url").value.trim(),
+        id: $("lm_id").value.trim(),
+        enabled: Boolean(enabled)
+      };
+      await jsonFetch("/-/admin/api/local-model/set-enabled", "POST", payload);
+      await loadBootstrap();
+      $("lm_enabled").value = String(Boolean(enabled));
+    };
+
+    $("enable_local_model").addEventListener("click", async () => {
+      try {
+        await setLocalEnabled(true);
+        setStatus("local_model_status", "Local model enabled.");
+      } catch (err) {
+        setStatus("local_model_status", "Enable failed: " + err.message, true);
+      }
+    });
+
+    $("disable_local_model").addEventListener("click", async () => {
+      try {
+        await setLocalEnabled(false);
+        setStatus("local_model_status", "Local model disabled.");
+      } catch (err) {
+        setStatus("local_model_status", "Disable failed: " + err.message, true);
+      }
+    });
+
+    $("delete_local_model").addEventListener("click", async () => {
+      try {
+        const payload = {
+          base_url: $("lm_base_url").value.trim(),
+          id: $("lm_id").value.trim()
+        };
+        await jsonFetch("/-/admin/api/local-model/delete", "POST", payload);
+        await loadBootstrap();
+        setStatus("local_model_status", "Local model mapping deleted.");
+      } catch (err) {
+        setStatus("local_model_status", "Delete failed: " + err.message, true);
+      }
+    });
+
+    $("run_chat").addEventListener("click", async () => {
+      try {
+        const payload = {
+          prompt: $("chat_prompt").value,
+          provider: $("chat_provider").value.trim(),
+          team_mode: $("chat_team_mode").value,
+          router_hint: $("chat_router_hint").value.trim(),
+          verification_level: $("chat_verification").value
+        };
+        setStatus("chat_status", "Running...");
+        const out = await jsonFetch("/-/admin/api/chat", "POST", payload);
+        $("chat_output").value = out.assistant || JSON.stringify(out.raw || {}, null, 2);
+        const team = (out.raw && out.raw.team) ? out.raw.team : {};
+        const cognitive = team.cognitive || out.cognitive_policy || {};
+        const budget = team.budget || {};
+        const members = Array.isArray(team.members) ? team.members : [];
+        const steps = Array.isArray(team.steps) ? team.steps : [];
+        const failures = Array.isArray(team.failures) ? team.failures : [];
+        const stepLines = steps.map((s) => {
+          const step = String(s.step || "");
+          const provider = String(s.provider || "");
+          const backend = String(s.backend || "");
+          const latency = Number(s.latency_ms || 0);
+          return "- " + step + " | " + provider + " | " + backend + " | " + latency + "ms";
+        });
+        const failLines = failures.map((f) => {
+          const step = String(f.step || "?");
+          const backend = String(f.backend || "");
+          const error = String(f.error || "");
+          return "- " + step + " | " + backend + " | " + error;
+        });
+        $("chat_team_trace").value = [
+          "used: " + String(Boolean(team.used)),
+          "verification_level: " + String(team.verification_level || ""),
+          "provider_pin: " + String(team.provider_pin || out.provider_pin || ""),
+          "cognitive_mode: " + String(cognitive.mode || ""),
+          "difficulty_score: " + String(cognitive.difficulty_score ?? ""),
+          "budget: " + JSON.stringify(budget || {}),
+          "members:",
+          ...(members.length ? members.map((m) => "- " + String(m)) : ["- (none)"]),
+          "steps:",
+          ...(stepLines.length ? stepLines : ["- (none)"]),
+          "failures:",
+          ...(failLines.length ? failLines : ["- (none)"])
+        ].join("\n");
+        setStatus("chat_status", "Complete. Route=" + (out.route || "") + " backend=" + (out.router_headers?.["x-router-backend"] || ""));
+      } catch (err) {
+        setStatus("chat_status", "Chat failed: " + err.message, true);
+        $("chat_team_trace").value = "";
+      }
+    });
+
+    $("refresh_runs").addEventListener("click", async () => {
+      try {
+        const out = await jsonFetch("/-/admin/api/runs?limit=80");
+        S.runs = out.runs || [];
+        renderRuns();
+      } catch (err) {
+        setStatus("chat_status", "Run refresh failed: " + err.message, true);
+      }
+    });
+
+    $("quick_refresh_snapshot").addEventListener("click", async () => {
+      try {
+        await loadBootstrap();
+        setStatus("quick_status", "Snapshot refreshed.");
+      } catch (err) {
+        setStatus("quick_status", "Snapshot refresh failed: " + err.message, true);
+      }
+    });
+
+    $("quick_refresh_runs").addEventListener("click", async () => {
+      try {
+        const out = await jsonFetch("/-/admin/api/runs?limit=80");
+        S.runs = out.runs || [];
+        renderRuns();
+        setStatus("quick_status", "Runs refreshed.");
+      } catch (err) {
+        setStatus("quick_status", "Run refresh failed: " + err.message, true);
+      }
+    });
+
+    $("quick_refresh_logs").addEventListener("click", async () => {
+      try {
+        await loadLogs();
+        setStatus("quick_status", "Logs refreshed.");
+      } catch (err) {
+        setStatus("quick_status", "Log refresh failed: " + err.message, true);
+      }
+    });
+
+    $("quick_reload_gateway").addEventListener("click", async () => {
+      try {
+        await jsonFetch("/-/admin/api/reload", "POST", {});
+        await loadBootstrap();
+        await loadLogs();
+        setStatus("quick_status", "Gateway reloaded and views refreshed.");
+      } catch (err) {
+        setStatus("quick_status", "Reload failed: " + err.message, true);
+      }
+    });
+
+    $("refresh_logs").addEventListener("click", async () => {
+      try {
+        await loadLogs();
+      } catch (err) {
+        setStatus("log_status", "Log refresh failed: " + err.message, true);
+      }
+    });
+
+    $("export_logs").addEventListener("click", async () => {
+      try {
+        const q = logQueryParams();
+        const fmt = $("log_export_format").value.trim() || "jsonl";
+        q.set("format", fmt);
+        window.open("/-/admin/api/logs/export?" + q.toString(), "_blank");
+        setStatus("log_status", "Export started (" + fmt + ").");
+      } catch (err) {
+        setStatus("log_status", "Export failed: " + err.message, true);
+      }
+    });
+
+    $("clear_log_filters").addEventListener("click", async () => {
+      $("log_limit").value = "200";
+      $("log_event_type").value = "";
+      $("log_level").value = "";
+      $("log_request_id").value = "";
+      $("log_run_id").value = "";
+      try {
+        await loadLogs();
+      } catch (err) {
+        setStatus("log_status", "Clear failed: " + err.message, true);
+      }
+    });
+
+    loadBootstrap().catch((err) => {
+      $("meta").textContent = "Bootstrap failed: " + err.message;
+    });
+    loadLogs().catch((err) => {
+      setStatus("log_status", "Log load failed: " + err.message, true);
+    });
+  </script>
+</body>
+</html>
