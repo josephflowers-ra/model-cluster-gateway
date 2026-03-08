@@ -119,6 +119,16 @@ def _write_release_notes(out_dir: Path) -> None:
     (out_dir / "RELEASE_NOTES.md").write_text("\n".join(notes), encoding="utf-8")
 
 
+def _write_gitignore(out_dir: Path) -> None:
+    lines = [
+        "__pycache__/",
+        "*.pyc",
+        "artifacts/",
+        "config/secrets/",
+    ]
+    (out_dir / ".gitignore").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def _copy_project_tree(src_root: Path, out_dir: Path) -> None:
     if out_dir.exists():
         shutil.rmtree(out_dir)
@@ -176,6 +186,7 @@ def main() -> int:
 
     _write_shareable_notes(out_dir, bool(args.mvp_pollinations_only))
     _write_release_notes(out_dir)
+    _write_gitignore(out_dir)
 
     summary = {
         "ok": True,

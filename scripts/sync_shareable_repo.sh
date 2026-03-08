@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SHARE_BUILD_DIR="${SHARE_BUILD_DIR:-$ROOT_DIR/artifacts/share/.build-shareable}"
-SHARE_REPO_DIR="${SHARE_REPO_DIR:-$ROOT_DIR/artifacts/share/model-cluster-gateway-shareable}"
+SHARE_REPO_DIR="${SHARE_REPO_DIR:-$ROOT_DIR/artifacts/share/model-cluster-gateway-shareable-repo}"
 REMOTE_URL="${SHARE_REMOTE_URL:-https://github.com/josephflowers-ra/model-cluster-gateway.git}"
 BRANCH="${SHARE_BRANCH:-main}"
 COMMIT_MSG="${SHARE_COMMIT_MSG:-chore(shareable): sync from core repo $(date -u +%Y-%m-%dT%H:%M:%SZ)}"
